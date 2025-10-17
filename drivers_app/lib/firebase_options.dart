@@ -41,48 +41,48 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyB7d5vR9pUuFXC6viyKF09yuhMH5LAtJJQ',
-    appId: '1:101246305805:web:056a88e227388d68027744',
-    messagingSenderId: '101246305805',
-    projectId: 'driver-c7e27',
-    authDomain: 'driver-c7e27.firebaseapp.com',
-    storageBucket: 'driver-c7e27.firebasestorage.app',
-    measurementId: 'G-4TGWWQD2MH',
+    apiKey: '',
+    appId: '',
+    messagingSenderId: '',
+    projectId: '',
+    authDomain: '',
+    storageBucket: '',
+    measurementId: '',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBR6uGIPgmKiBa0ApBcoDkhba-t3P-KMVo',
-    appId: '1:101246305805:android:472217d0c9a1ffa7027744',
-    messagingSenderId: '101246305805',
-    projectId: 'driver-c7e27',
-    storageBucket: 'driver-c7e27.firebasestorage.app',
+    apiKey: '',
+    appId: '',
+    messagingSenderId: '',
+    projectId: '',
+    storageBucket: '',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDfF2_-N3DSbFGyrMMrtTvi19Hjl_ToZxI',
-    appId: '1:101246305805:ios:ab3eea4a3597c461027744',
-    messagingSenderId: '101246305805',
-    projectId: 'driver-c7e27',
-    storageBucket: 'driver-c7e27.firebasestorage.app',
-    iosBundleId: 'com.example.driversApp',
+    apiKey: '',
+    appId: '',
+    messagingSenderId: '',
+    projectId: '',
+    storageBucket: '',
+    iosBundleId: '',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyDfF2_-N3DSbFGyrMMrtTvi19Hjl_ToZxI',
-    appId: '1:101246305805:ios:ab3eea4a3597c461027744',
-    messagingSenderId: '101246305805',
-    projectId: 'driver-c7e27',
-    storageBucket: 'driver-c7e27.firebasestorage.app',
-    iosBundleId: 'com.example.driversApp',
+    apiKey: '',
+    appId: '',
+    messagingSenderId: '',
+    projectId: '',
+    storageBucket: '',
+    iosBundleId: '',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyB7d5vR9pUuFXC6viyKF09yuhMH5LAtJJQ',
-    appId: '1:101246305805:web:172892844e9f818c027744',
-    messagingSenderId: '101246305805',
-    projectId: 'driver-c7e27',
-    authDomain: 'driver-c7e27.firebaseapp.com',
-    storageBucket: 'driver-c7e27.firebasestorage.app',
-    measurementId: 'G-FV7R9KZH28',
+    apiKey: '',
+    appId: '',
+    messagingSenderId: '',
+    projectId: '',
+    authDomain: '',
+    storageBucket: '',
+    measurementId: '',
   );
 }
