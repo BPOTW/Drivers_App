@@ -132,33 +132,36 @@ class _RoutesScreenState extends State<RoutesScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header + Button Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "Routes",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const CreateRouteScreen(),
-                    ),
-                  ).then((_) => setState(() {}));
-                },
-                icon: const Icon(Icons.add_road),
-                label: const Text(
-                  "Create New Route",
-                  style: TextStyle(color: Colors.white),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Routes",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
-                  iconColor: Colors.white,
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const CreateRouteScreen(),
+                      ),
+                    ).then((_) => setState(() {}));
+                  },
+                  icon: const Icon(Icons.add_road),
+                  label: const Text(
+                    "Create New Route",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal,
+                    iconColor: Colors.white,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
 
           const SizedBox(height: 20),

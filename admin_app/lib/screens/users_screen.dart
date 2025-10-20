@@ -104,32 +104,35 @@ class _usersScreen extends State<UsersScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header and Button
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "Users",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const CreateUserScreen()),
-                  ).then((_) => setState(() {}));
-                },
-                icon: const Icon(Icons.add),
-                label: const Text(
-                  "Create User",
-                  style: TextStyle(color: Colors.white),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Users",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
-                  iconColor: Colors.white,
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const CreateUserScreen()),
+                    ).then((_) => setState(() {}));
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text(
+                    "Create User",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal,
+                    iconColor: Colors.white,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
 
           const SizedBox(height: 20),

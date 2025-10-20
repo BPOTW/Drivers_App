@@ -42,7 +42,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Expanded(
             child: Column(
               children: [
-                TopBar(title: selectedPage),
+                // TopBar(title: selectedPage),
                 Expanded(child: _getSelectedPage()),
               ],
             ),
