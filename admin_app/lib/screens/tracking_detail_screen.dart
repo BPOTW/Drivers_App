@@ -1,3 +1,4 @@
+import 'package:admin_app/components/log_data_to_server.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -29,6 +30,11 @@ class _DriversLocationScreenState extends State<DriversLocationScreen> {
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } else {
+      await logEvent(
+        event: 'App Error',
+        message: 'Error opening location Page:tracking_detail_screen.',
+        type: 'ERROR',
+      );
       throw 'Could not open Google Maps';
     }
   }
@@ -78,6 +84,11 @@ class _DriversLocationScreenState extends State<DriversLocationScreen> {
         };
       }).toList();
     } catch (e) {
+      await logEvent(
+        event: 'App Error',
+        message: 'Error fetching driver details Page:tracking_detail_screen.',
+        type: 'ERROR',
+      );
       print('Error loading driver details: $e');
     }
 

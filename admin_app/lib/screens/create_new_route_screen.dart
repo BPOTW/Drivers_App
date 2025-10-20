@@ -38,14 +38,13 @@ class _CreateRouteScreenState extends State<CreateRouteScreen> {
     final batch = firestore.batch();
 
     try {
-      // Create route doc reference
       final routeRef = firestore.collection('routes').doc();
+      final assignedDriversRef = firestore.collection('routes').doc(routeRef.id).collection('assigned_drivers').doc(routeData['driver_info']['driver_id']);
       final routeId = routeRef.id;
 
-      // Add route data
-      batch.set(routeRef, routeData);
+      batch.set(routeRef, routeData['route']);
+      batch.set(assignedDriversRef, routeData['driver_info']);
 
-      // Add checkpoints
       int i = 1;
       for (var checkpoint in checkpoints) {
         final checkpointRef = routeRef.collection('checkpoints').doc();
@@ -67,14 +66,14 @@ class _CreateRouteScreenState extends State<CreateRouteScreen> {
       // Update user with routeId
       final userRef = firestore
           .collection('users')
-          .doc(routeData['driver_info']['id']);
+          .doc(routeData['driver_info']['driver_id']);
       batch.update(userRef, {
         'route_id': routeId,
-        'route_name': routeData['name'],
+        'route_name': routeData['route']['name'],
         'dealer_info':{
-          'name':routeData['dealer_name'],
+          'name':routeData['route']['dealer_name'],
           'id':'',
-          'phone_no':routeData['dealer_phone'],
+          'phone_no':routeData['route']['dealer_phone'],
         },
         'is_delivery_assigned':true,
       });
@@ -82,7 +81,7 @@ class _CreateRouteScreenState extends State<CreateRouteScreen> {
       // Update live location with routeId
       final liveLocationRef = firestore
           .collection('live_locations')
-          .doc(routeData['driver_info']['id']);
+          .doc(routeData['driver_info']['driver_id']);
       batch.update(liveLocationRef, {'route_id': routeId});
 
       // Commit all writes atomically
@@ -542,7 +541,7 @@ class _CreateRouteScreenState extends State<CreateRouteScreen> {
     TextInputType? keyboardType,
   }) {
     return TextFormField(
-      controller: controller,
+      controller: controller, 
       validator: validator,
       keyboardType: keyboardType,
       style: const TextStyle(color: Colors.white),
@@ -600,23 +599,24 @@ class _CreateRouteScreenState extends State<CreateRouteScreen> {
     setState(() => _isSubmitting = true);
 
     final routeData = {
-      'checkpoints': _checkpoints.length,
+      'route':{'checkpoints': _checkpoints.length,
       'created_at': DateTime.now().toIso8601String(),
       'dealer_name': _dealerNameController.text.trim(),
       'dealer_phone': _dealerPhoneController.text.trim(),
       'distance_km': _totalDistanceController.text.trim(),
-      'driver_info': {
-        'id': _driverIdController.text.trim(),
-        'name': _driverNameController.text.trim(),
-        'phone_no': _driverPhoneController.text.trim(),
-        'vehicle_no': _vehicleNoController.text.trim(),
-      },
       'end': _endPointController.text.trim(),
       'expected_time': _expectedTimeController.text.trim(),
       'is_active': true,
       'name': _routeNameController.text.trim(),
       'start': _startPointController.text.trim(),
-      'status': 'Pending',
+      'status': 'Pending',},
+      'driver_info': {
+        'driver_id': _driverIdController.text.trim(),
+        'name': _driverNameController.text.trim(),
+        'phone_no': _driverPhoneController.text.trim(),
+        'vehicle_no': _vehicleNoController.text.trim(),
+        'assigned_at': DateTime.now().toIso8601String(),
+      }
     };
 
     await addRouteDataToDatabase(routeData, _checkpoints);

@@ -1,3 +1,4 @@
+import 'package:admin_app/components/log_data_to_server.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -23,6 +24,11 @@ class TrackingScreen extends StatelessWidget {
         };
       }).toList();
     } catch (e) {
+      await logEvent(
+        event: 'App Error',
+        message: 'Error fetching location data. Page:tracking_screen',
+        type: 'ERROR',
+      );
       print('Error fetching drivers: $e');
       return [];
     }
@@ -95,7 +101,7 @@ class TrackingScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text('Driver ID: ${driver['id']}'),
-                        Text('Route: ${driver['route']}'),
+                        Text('Route: ${driver['route_id']}'),
                         // Text(
                         //   'Status: ${driver['status']}',
                         //   style: TextStyle(

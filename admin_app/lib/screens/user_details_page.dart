@@ -1,3 +1,4 @@
+import 'package:admin_app/components/log_data_to_server.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -8,17 +9,26 @@ class DriverDetailsScreen extends StatelessWidget {
   DriverDetailsScreen({super.key, required this.driverData});
 
   Future<List<Map<String, dynamic>>> fetchCheckpoints(String routeId) async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('routes')
-        .doc(routeId)
-        .collection('checkpoints')
-        .get();
-    // print(snapshot.docs.first.data());
-    return snapshot.docs.map((doc) => doc.data()).toList();
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('routes')
+          .doc(routeId)
+          .collection('checkpoints')
+          .get();
+      // print(snapshot.docs.first.data());
+      
+      return snapshot.docs.map((doc) => doc.data()).toList();
+    } catch (e) {
+      await logEvent(
+        event: 'App Error',
+        message: 'Error fetching checkpoints data Page:user_details_page.',
+        type: 'ERROR',
+      );
+      return [];
+    }
   }
 
   Future<Map> getLocation() async {
-    
     try {
       DocumentSnapshot<Map<String, dynamic>> docSnapshot =
           await FirebaseFirestore.instance
@@ -28,9 +38,9 @@ class DriverDetailsScreen extends StatelessWidget {
 
       if (docSnapshot.exists) {
         Map data = {
-          'latitude':docSnapshot.data()!['location'].latitude,
-          'longitude':docSnapshot.data()!['location'].longitude,
-          'last_updated':docSnapshot.data()!['last_updated'].toDate(),
+          'latitude': docSnapshot.data()!['location'].latitude,
+          'longitude': docSnapshot.data()!['location'].longitude,
+          'last_updated': docSnapshot.data()!['last_updated'].toDate(),
         };
         return data;
       } else {
@@ -38,6 +48,11 @@ class DriverDetailsScreen extends StatelessWidget {
         return {};
       }
     } catch (e) {
+      await logEvent(
+        event: 'App Error',
+        message: 'Error getting location data from server Page:user_details_page.',
+        type: 'ERROR',
+      );
       print("Error fetching document: $e");
       return {};
     }
@@ -46,19 +61,18 @@ class DriverDetailsScreen extends StatelessWidget {
   int checkpointsLength = 0;
 
   void showLoadingDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    barrierDismissible: false, // Prevent closing by tapping outside
-    builder: (context) => const Center(
-      child: CircularProgressIndicator(color: Colors.tealAccent),
-    ),
-  );
-}
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevent closing by tapping outside
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: Colors.tealAccent),
+      ),
+    );
+  }
 
-void hideLoadingDialog(BuildContext context) {
-  Navigator.pop(context);
-}
-
+  void hideLoadingDialog(BuildContext context) {
+    Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +94,7 @@ void hideLoadingDialog(BuildContext context) {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 SizedBox(
-                  width: isDeliveryAssigned ? 650 : deviceWidth*0.97,
+                  width: isDeliveryAssigned ? 650 : deviceWidth * 0.97,
                   child: Column(
                     children: [
                       _buildSectionTitle('Driver Information'),
@@ -95,27 +109,29 @@ void hideLoadingDialog(BuildContext context) {
                     ],
                   ),
                 ),
-                isDeliveryAssigned ? SizedBox(
-                  width: 650,
-                  child: Column(
-                    children: [
-                      _buildSectionTitle('Dealer Information'),
-                      const SizedBox(height: 10),
-                      _buildInfoCard([
-                        _buildInfoRow(
-                          'Dealer Name',
-                          driverData['dealer_info']['name'],
+                isDeliveryAssigned
+                    ? SizedBox(
+                        width: 650,
+                        child: Column(
+                          children: [
+                            _buildSectionTitle('Dealer Information'),
+                            const SizedBox(height: 10),
+                            _buildInfoCard([
+                              _buildInfoRow(
+                                'Dealer Name',
+                                driverData['dealer_info']['name'],
+                              ),
+                              _buildInfoRow(
+                                'Dealer Phone No.',
+                                driverData['dealer_info']['phone_no'],
+                              ),
+                              _buildInfoRow("", ""),
+                              _buildInfoRow("", ""),
+                            ]),
+                          ],
                         ),
-                        _buildInfoRow(
-                          'Dealer Phone No.',
-                          driverData['dealer_info']['phone_no'],
-                        ),
-                        _buildInfoRow("", ""),
-                        _buildInfoRow("", ""),
-                      ]),
-                    ],
-                  ),
-                ):SizedBox(),
+                      )
+                    : SizedBox(),
               ],
             ),
 
@@ -144,9 +160,7 @@ void hideLoadingDialog(BuildContext context) {
                     hideLoadingDialog(context);
                     showDialog(
                       context: context,
-                      builder: (context) => LocationDialog(
-                        data: locationData,
-                      ),
+                      builder: (context) => LocationDialog(data: locationData),
                     );
                   },
                   icon: const Icon(Icons.location_on),
@@ -350,10 +364,7 @@ void hideLoadingDialog(BuildContext context) {
 class LocationDialog extends StatelessWidget {
   final Map data;
 
-  const LocationDialog({
-    super.key,
-    required this.data,
-  });
+  const LocationDialog({super.key, required this.data});
 
   /// Opens location in Google Maps
   Future<void> _openInGoogleMaps() async {
@@ -362,6 +373,11 @@ class LocationDialog extends StatelessWidget {
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } else {
+      await logEvent(
+        event: 'App Error',
+        message: 'Failed to open location Page:user_details_page.',
+        type: 'ERROR',
+      );
       throw 'Could not open Google Maps';
     }
   }

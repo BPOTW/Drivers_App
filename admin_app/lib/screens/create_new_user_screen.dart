@@ -22,10 +22,10 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
   String _selectedRole = 'Driver';
   String _selectedStatus = 'Active';
   bool _isSubmitting = false;
-  // bool _isSubmitted = false;
 
   Future<void> addUser() async {
     try {
+      if (!_formKey.currentState!.validate()) return;
       setState(() {
         _isSubmitting = true;
       });
@@ -60,8 +60,6 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
       });
 
       await batch.commit();
-
-      
 
       print('User added successfully!');
       Navigator.pop(context);
@@ -148,6 +146,7 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
                     controller: _vehicleNoController,
                     label: 'Vehicle No (optional)',
                     icon: Icons.directions_car,
+                    
                   ),
                   const SizedBox(height: 16),
 

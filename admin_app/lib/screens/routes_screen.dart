@@ -1,3 +1,4 @@
+import 'package:admin_app/components/log_data_to_server.dart';
 import 'package:admin_app/screens/create_new_route_screen.dart';
 import 'package:admin_app/screens/route_detail_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -11,13 +12,19 @@ class RoutesScreen extends StatefulWidget {
 }
 
 class _RoutesScreenState extends State<RoutesScreen> {
-
   List<bool> toggleButton = [];
   Future<List<Map<String, dynamic>>> fetchRoutes() async {
     try {
-      final snapshot = await FirebaseFirestore.instance.collection('routes').get();
+      final snapshot = await FirebaseFirestore.instance
+          .collection('routes')
+          .get();
       return snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
     } catch (e) {
+      await logEvent(
+        event: 'App Error',
+        message: 'Error fetching routes from server Page:routes_screen.',
+        type: 'ERROR',
+      );
       print('Error fetching routes: $e');
       return [];
     }
@@ -30,7 +37,9 @@ class _RoutesScreenState extends State<RoutesScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Route status updated to ${isActive ? 'Active' : 'Inactive'}'),
+          content: Text(
+            'Route status updated to ${isActive ? 'Active' : 'Inactive'}',
+          ),
           backgroundColor: Colors.teal,
           behavior: SnackBarBehavior.floating,
         ),
@@ -44,32 +53,76 @@ class _RoutesScreenState extends State<RoutesScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+      await logEvent(
+        event: 'App Error',
+        message: 'Error updating route status Page:routes_screen.',
+        type: 'ERROR',
+      );
     }
   }
 
-Future<void> deleteRoute(String routeId) async {
-  final firestore = FirebaseFirestore.instance;
+  Future<void> deleteRoute(String routeId) async {
+    final firestore = FirebaseFirestore.instance;
 
-  try {
-    final routeRef = firestore.collection('routes').doc(routeId);
+    try {
+      final routeRef = firestore.collection('routes').doc(routeId);
 
-    final checkpointsSnapshot = await routeRef.collection('checkpoints').get();
+      final driversRef = await routeRef.collection('assigned_drivers').get();
+      final docIds = driversRef.docs.map((doc) => doc.id).toList();
 
-    WriteBatch batch = firestore.batch();
-    for (var doc in checkpointsSnapshot.docs) {
-      batch.delete(doc.reference);
+      final checkpointsSnapshot = await routeRef
+          .collection('checkpoints')
+          .get();
+
+      final assignedDriversSnapshot = await routeRef
+          .collection('assigned_drivers')
+          .get();
+      
+
+      WriteBatch batch = firestore.batch();
+      for (var doc in checkpointsSnapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      for (var doc in assignedDriversSnapshot.docs) {
+        batch.delete(doc.reference);
+      }
+
+      for (var id in docIds) {
+        final locationSnapshot = firestore
+          .collection('live_locations')
+          .doc(id);
+        final usersSnapshot = firestore
+          .collection('users')
+          .doc(id);
+        batch.update(locationSnapshot,{'route_id':''});
+        batch.update(usersSnapshot,{'route_id':'','route_name':'','is_delivery_assigned':false});
+      }
+
+      await batch.commit();
+      await routeRef.delete();
+
+      print("Route and checkpoints deleted successfully!");
+      await logEvent(
+        event: 'Route Deleted',
+        message: 'Successfully deleted route : ${routeId}',
+        type: 'INFO',
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Route deleted successfully")),
+      );
+      setState(() {});
+    } catch (e) {
+      await logEvent(
+        event: 'App Error',
+        message: 'Error deleting route Page:routes_screen.',
+        type: 'ERROR',
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Something went wrong!")),
+      );
+      print("Error deleting route and checkpoints: $e");
     }
-
-    await batch.commit();
-    await routeRef.delete();
-
-    print("Route and checkpoints deleted successfully!");
-  } catch (e) {
-    print("Error deleting route and checkpoints: $e");
   }
-}
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +146,7 @@ Future<void> deleteRoute(String routeId) async {
                     MaterialPageRoute(
                       builder: (_) => const CreateRouteScreen(),
                     ),
-                  ).then((_) => setState(() {})); // refresh after new route
+                  ).then((_) => setState(() {}));
                 },
                 icon: const Icon(Icons.add_road),
                 label: const Text(
@@ -170,7 +223,9 @@ Future<void> deleteRoute(String routeId) async {
                                     ),
                                     Text(
                                       'Assigned to: ${route['driver_info']?['name'] ?? 'N/A'}',
-                                      style: const TextStyle(color: Colors.white70),
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -219,7 +274,6 @@ Future<void> deleteRoute(String routeId) async {
                                 // Toggle + Delete
                                 Row(
                                   children: [
-                                    
                                     IconButton(
                                       onPressed: () async {
                                         final confirm = await showDialog<bool>(
@@ -227,18 +281,24 @@ Future<void> deleteRoute(String routeId) async {
                                           builder: (context) => AlertDialog(
                                             title: const Text('Delete Route'),
                                             content: const Text(
-                                                'Are you sure you want to delete this route?'),
+                                              'Are you sure you want to delete this route?',
+                                            ),
                                             actions: [
                                               TextButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(context, false),
+                                                onPressed: () => Navigator.pop(
+                                                  context,
+                                                  false,
+                                                ),
                                                 child: const Text('Cancel'),
                                               ),
                                               ElevatedButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(context, true),
+                                                onPressed: () => Navigator.pop(
+                                                  context,
+                                                  true,
+                                                ),
                                                 style: ElevatedButton.styleFrom(
-                                                    backgroundColor: Colors.red),
+                                                  backgroundColor: Colors.red,
+                                                ),
                                                 child: const Text('Delete'),
                                               ),
                                             ],

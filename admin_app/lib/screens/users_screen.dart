@@ -1,3 +1,4 @@
+import 'package:admin_app/components/log_data_to_server.dart';
 import 'package:admin_app/screens/create_new_user_screen.dart';
 import 'package:admin_app/screens/user_details_page.dart';
 import 'package:flutter/material.dart';
@@ -11,16 +12,21 @@ class UsersScreen extends StatefulWidget {
 }
 
 class _usersScreen extends State<UsersScreen> {
-
   List<bool> toggleButton = [];
 
   Future<List<Map<String, dynamic>>> fetchUsers() async {
     try {
-      final snapshot = await FirebaseFirestore.instance.collection('users').get();
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .get();
       // print(snapshot.docs);
       return snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
     } catch (e) {
-      print('Error fetching users: $e');
+      await logEvent(
+        event: 'App Error',
+        message: 'Error fetching users data from server.',
+        type: 'ERROR',
+      );
       return [];
     }
   }
@@ -33,12 +39,21 @@ class _usersScreen extends State<UsersScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('User status updated to ${isActive ? 'Active' : 'Inactive'}'),
+          content: Text(
+            'User status updated to ${isActive ? 'Active' : 'Inactive'}',
+          ),
           backgroundColor: Colors.teal,
           behavior: SnackBarBehavior.floating,
         ),
       );
+
       setState(() {}); // refresh UI
+      await logEvent(
+        event: 'User Status Updated',
+        message:
+            'User status to ${isActive ? 'Active' : 'Inactive'} updated successfully',
+        userId: id,
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -47,9 +62,39 @@ class _usersScreen extends State<UsersScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+      await logEvent(
+        event: 'App Error',
+        message:
+            'Error updating user status to ${isActive ? 'Active' : 'Inactive'}',
+        type: 'ERROR',
+      );
     }
   }
 
+  Future<void> deleteUserAndLiveLocation(String userId, String routeId) async {
+  final firestore = FirebaseFirestore.instance;
+  final batch = firestore.batch();
+
+  try {
+    final userRef = firestore.collection('users').doc(userId);
+    final liveLocationRef = firestore.collection('live_locations').doc(userId);
+
+    if(routeId != ''){
+      final routeRef = firestore.collection('routes').doc(routeId).collection('assigned_drivers').doc(userId);
+      batch.delete(routeRef);
+    }
+
+    batch.delete(userRef);
+    batch.delete(liveLocationRef);
+
+    await batch.commit();
+
+    print("Successfully deleted user '$userId' and their live location.");
+  } catch (e) {
+    print("Failed to delete user and live location: $e");
+    rethrow;
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -70,8 +115,9 @@ class _usersScreen extends State<UsersScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const CreateUserScreen()),
-                  );
+                    MaterialPageRoute(
+                      builder: (_) => const CreateUserScreen()),
+                  ).then((_) => setState(() {}));
                 },
                 icon: const Icon(Icons.add),
                 label: const Text(
@@ -91,36 +137,36 @@ class _usersScreen extends State<UsersScreen> {
           // Grid Cards
           Expanded(
             child: FutureBuilder<List<Map<String, dynamic>>>(
-        future: fetchUsers(), // 👈 Calling the function here
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
+              future: fetchUsers(), // 👈 Calling the function here
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
 
-          final users = snapshot.data ?? [];
-          if (users.isEmpty) {
-            return const Center(child: Text('No users found'));
-          }
-          // print(users);
+                final users = snapshot.data ?? [];
+                if (users.isEmpty) {
+                  return const Center(child: Text('No users found'));
+                }
+                // print(users);
 
-          return GridView.builder(
-            padding: const EdgeInsets.all(12),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              childAspectRatio: 1.8,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-            ),
-            itemCount: users.length,
-            itemBuilder: (context, index) {
-              final user = users[index];
-              toggleButton.add(user['key_active']);
-              // user.
-              // print(user.);
-              return Card(
+                return GridView.builder(
+                  padding: const EdgeInsets.all(12),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    childAspectRatio: 1.8,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: users.length,
+                  itemBuilder: (context, index) {
+                    final user = users[index];
+                    toggleButton.add(user['key_active']);
+                    // user.
+                    // print(user.);
+                    return Card(
                       color: Colors.teal.withOpacity(0.15),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -160,16 +206,21 @@ class _usersScreen extends State<UsersScreen> {
                               ],
                             ),
                             const SizedBox(height: 10),
-                            user['route_name'] != '' && user['route_name'] != null ? Text(
-                              'Assigned Route: ${user['route_name']}',
-                              style: TextStyle(color: Colors.white70),
-                            ) : SizedBox(),
+                            user['route_name'] != '' &&
+                                    user['route_name'] != null
+                                ? Text(
+                                    'Assigned Route: ${user['route_name']}',
+                                    style: TextStyle(color: Colors.white70),
+                                  )
+                                : SizedBox(),
                             const SizedBox(height: 10),
-                            user['route_id'] != '' && user['route_id'] != null ? SelectableText(
-                              'Route Id: ${user['route_id']}',
+                            user['route_id'] != '' && user['route_id'] != null
+                                ? SelectableText(
+                                    'Route Id: ${user['route_id']}',
 
-                              style: TextStyle(color: Colors.white70),
-                            ) : SizedBox(),
+                                    style: TextStyle(color: Colors.white70),
+                                  )
+                                : SizedBox(),
                             const Spacer(),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -180,7 +231,7 @@ class _usersScreen extends State<UsersScreen> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (_) => DriverDetailsScreen(
-                                          driverData: user
+                                          driverData: user,
                                         ),
                                       ),
                                     );
@@ -203,11 +254,14 @@ class _usersScreen extends State<UsersScreen> {
                                       inactiveThumbColor: Colors.red,
                                       onChanged: (bool value) {
                                         toggleButton[index] = value;
-                                        updateUserStatus(user['id'], toggleButton[index]);
+                                        updateUserStatus(
+                                          user['id'],
+                                          toggleButton[index],
+                                        );
                                       },
                                     ),
                                     IconButton(
-                                      onPressed: () {},
+                                      onPressed: () {deleteUserAndLiveLocation(user['id'], user['route_id']);},
                                       icon: const Icon(Icons.delete),
                                       color: Colors.redAccent,
                                     ),
@@ -219,10 +273,10 @@ class _usersScreen extends State<UsersScreen> {
                         ),
                       ),
                     );
-            },
-          );
-        },
-      ),
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),

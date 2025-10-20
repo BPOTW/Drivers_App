@@ -1,3 +1,4 @@
+import 'package:admin_app/screens/log_data_screen.dart';
 import 'package:flutter/material.dart';
 import '../widgets/sidebar.dart';
 import '../widgets/topbar.dart';
@@ -22,6 +23,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return const RoutesScreen();
       case 'Tracking':
         return const TrackingScreen();
+      case 'Logs':
+        return const LogsPage();
       default:
         return UsersScreen();
     }
