@@ -1,6 +1,7 @@
 import 'package:drivers_app/screens/dashboardScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -16,15 +17,28 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   String userId = "";
   String storedUserKey = "";
+  late LocationPermission permission ;
 
   @override
   void initState() {
     checkIfLogedIn();
+    checkPermission();
     super.initState();
   }
 
+  void checkPermission() async{
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        print('Location permissions are denied');
+      }
+    }
+  }
+
   void checkIfLogedIn() async {
-    final prefs = await SharedPreferences.getInstance();
+    try{
+      final prefs = await SharedPreferences.getInstance();
     // prefs.remove("loginKey");
     String loginKey = prefs.getString('loginKey') ?? "";
 
@@ -44,6 +58,9 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
     setState(() => _isLoading = false);
+    }catch(error){
+      return;
+    }
   }
 
   Future getKeyFromDatabase(enteredKey) async {
@@ -110,11 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              InkWell(
-                onTap: () {
-                  checkIfLogedIn();
-                },
-                child: Icon(Icons.lock, size: 80, color: Colors.tealAccent)),
+              Icon(Icons.lock, size: 80, color: Colors.tealAccent),
               const SizedBox(height: 30),
               const Text(
                 "Driver Login",

@@ -87,7 +87,6 @@ class _LocationLogScreenState extends State<LocationLogScreen> {
       );
 
       if (distance > 5 || speed >= 0.0) {
-        // meters — threshold for movement
         isMoving = true;
         previousLocation = currentPosition;
       } else {
@@ -538,13 +537,3 @@ class _LocationLogScreenState extends State<LocationLogScreen> {
     );
   }
 }
-
-
-
-// expected_time int
-// has_reached bool
-// location geopoints
-// name String
-// order int
-// status string 
-// time_reached timestamp
