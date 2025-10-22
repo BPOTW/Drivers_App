@@ -78,7 +78,6 @@ class _LocationLogScreenState extends State<LocationLogScreen> {
   Position? previousLocation;
   bool checkIfMoving(Position currentPosition, double speed) {
     bool isMoving = false;
-    currentPosition.
     if (previousLocation != null) {
       double distance = Geolocator.distanceBetween(
         previousLocation!.latitude,
