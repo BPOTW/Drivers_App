@@ -11,6 +11,7 @@ Future<void> logEvent({
   final logRef = firestore.collection('server_events').doc();
 try{
   await logRef.set({
+    'is_deleted':false,
     'type': type,
     'event': event,
     'userId': userId ?? 'system',
@@ -23,3 +24,11 @@ try{
   print(errr);
 }
 }
+
+// qarza 13000
+// rent 8000
+// ride 2000
+// kharch 2000
+// ticket 2000
+// 1000
+// salan 2500

@@ -1,8 +1,10 @@
-import 'package:drivers_app/screens/dashboardScreen.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../services/firebase_service.dart';
+import '../services/location_service.dart';
+import '../widgets/loading_indicator.dart';
+import '../utils/app_utils.dart';
+import '../constants/app_constants.dart';
+import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,113 +15,96 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _keyController = TextEditingController();
-  
   bool _isLoading = false;
-  String userId = "";
-  String storedUserKey = "";
-  late LocationPermission permission ;
 
   @override
   void initState() {
-    checkIfLogedIn();
-    checkPermission();
     super.initState();
+    _checkIfLoggedIn();
+    _checkLocationPermission();
   }
 
-  void checkPermission() async{
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        print('Location permissions are denied');
+  Future<void> _checkLocationPermission() async {
+    await LocationService.requestLocationPermission();
+  }
+
+  Future<void> _checkIfLoggedIn() async {
+    try {
+      final loginKey = await StorageService.getLoginKey();
+      
+      if (loginKey.isNotEmpty) {
+        setState(() => _isLoading = true);
+        
+        final user = await FirebaseService.getUserByLoginKey(loginKey);
+        
+        if (user!.keyActive && mounted) {
+          await StorageService.saveUserId(user.id);
+          _navigateToDashboard();
+        } else if (mounted) {
+          setState(() => _isLoading = false);
+        }
       }
-    }
-  }
-
-  void checkIfLogedIn() async {
-    try{
-      final prefs = await SharedPreferences.getInstance();
-    // prefs.remove("loginKey");
-    String loginKey = prefs.getString('loginKey') ?? "";
-
-    if(loginKey.isNotEmpty){
-      setState(() => _isLoading = true);
-      Map data = await getKeyFromDatabase(loginKey);
-      if(data.isNotEmpty){
+    } catch (error) {
+      if (mounted) {
         setState(() => _isLoading = false);
-        Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LocationLogScreen()),
-      );
-      }else{
-        return;
       }
-    }else{
-      return;
-    }
-    setState(() => _isLoading = false);
-    }catch(error){
-      return;
+      print('Error checking login status: $error');
     }
   }
 
-  Future getKeyFromDatabase(enteredKey) async {
-    final query = await FirebaseFirestore.instance
-        .collection('users')
-        .where('login_key', isEqualTo: enteredKey)
-        .where('key_active', isEqualTo: true)
-        .limit(1)
-        .get();
-
-    Map userData = query.docs.first.data();
-    userId = query.docs.first.id;
-    return userData;
-  }
-
-  void saveUserData(loginKey) async {
-    final storage = await SharedPreferences.getInstance();
-    await storage.setString('userId',  userId);
-    await storage.setString('loginKey', loginKey);
-  }
-
-  void _login() async {
+  Future<void> _login() async {
     if (_keyController.text.trim().isEmpty) {
-      _showError("Please enter your access key.");
+      AppUtils.showErrorSnackBar(context, "Please enter your access key.");
       return;
     }
 
+    if (!mounted) return;
+    
     setState(() => _isLoading = true);
-    // await Future.delayed(const Duration(seconds: 1)); // simulate network check
 
-    Map data = await getKeyFromDatabase(_keyController.text.trim());
+    try {
+      final user = await FirebaseService.getUserByLoginKey(_keyController.text.trim());
+      print("User is $user");
+      if (user != null && user.keyActive && mounted) {
+        await StorageService.saveUserId(user.id);
+        await StorageService.saveLoginKey(user.loginKey);
+        _navigateToDashboard();
+      } else if (mounted) {
+        if(!user!.keyActive){
+          AppUtils.showErrorSnackBar(context, "Login blocked by Admin.");
+        }else{
+          AppUtils.showErrorSnackBar(context, "Invalid key. Try again.");
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        AppUtils.showErrorSnackBar(context, "Login failed. Please try again.");
+      }
+      print('Login error: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
-    if (_keyController.text.trim() == data["login_key"]) {
-      if (!mounted) return;
-      print("Success");
-      saveUserData(data['login_key']);
+  void _navigateToDashboard() {
+    if (mounted) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const LocationLogScreen()),
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
       );
-    } else {
-      _showError("Invalid key. Try again.");
     }
-
-    setState(() => _isLoading = false);
-  }
-
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: Colors.redAccent,
-        duration: const Duration(seconds: 2),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: LoadingIndicator(message: "Checking login status..."),
+      );
+    }
+
     return Scaffold(
       body: Center(
         child: Padding(
@@ -127,7 +112,11 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.lock, size: 80, color: Colors.tealAccent),
+              const Icon(
+                Icons.lock,
+                size: 80,
+                color: Colors.tealAccent,
+              ),
               const SizedBox(height: 30),
               const Text(
                 "Driver Login",
@@ -152,24 +141,24 @@ class _LoginScreenState extends State<LoginScreen> {
                   fillColor: Colors.grey[850],
                   hintText: 'Enter Access Key',
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadius),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderSide: const BorderSide(color: Colors.tealAccent),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadius),
                   ),
                 ),
               ),
               const SizedBox(height: 30),
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: AppConstants.buttonHeight,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _login,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blueAccent,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(AppConstants.borderRadius),
                     ),
                   ),
                   child: _isLoading

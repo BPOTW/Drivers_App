@@ -23,8 +23,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return const RoutesScreen();
       case 'Tracking':
         return const TrackingScreen();
-      case 'Logs':
-        return const LogsPage();
+      // case 'Logs':
+      //   return const LogsPage();
       default:
         return UsersScreen();
     }

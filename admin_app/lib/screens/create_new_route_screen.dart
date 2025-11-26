@@ -27,6 +27,7 @@ class _CreateRouteScreenState extends State<CreateRouteScreen> {
 
   bool _isSubmitting = false;
   bool _isSubmitted = false;
+  String? _selectedDriverId; // Track selected driver
 
   List<Map<String, dynamic>> _checkpoints = [];
 
@@ -39,21 +40,35 @@ class _CreateRouteScreenState extends State<CreateRouteScreen> {
 
     try {
       final routeRef = firestore.collection('routes').doc();
-      final assignedDriversRef = firestore.collection('routes').doc(routeRef.id).collection('assigned_drivers').doc(routeData['driver_info']['driver_id']);
-      final routeId = routeRef.id;
+      final routeId = routeRef.id;      
 
-      batch.set(routeRef, routeData['route']);
-      batch.set(assignedDriversRef, routeData['driver_info']);
+      // Add driver info directly to route document
+      // final routeDataWithDriver = {
+      //   ...routeData['route'],
+      //   {'driver_id': routeData['driver_info']['driver_id'],
+      //   'driver_name': routeData['driver_info']['name'],
+      //   'driver_phone': routeData['driver_info']['phone_no'],
+      //   'vehicle_no': routeData['driver_info']['vehicle_no'],
+      //   'assigned_at': routeData['driver_info']['assigned_at'],}
+      // };
+
+      print(routeData);
+
+      batch.set(routeRef, routeData);
+      // batch.set(assignedDriversRef, routeData['driver_info']);
+
+      // batch.set(routeRef, routeDataWithDriver);
 
       int i = 1;
       for (var checkpoint in checkpoints) {
         final checkpointRef = routeRef.collection('checkpoints').doc();
+        final lat = checkpoint['latitude'].text != '' ? double.parse(checkpoint['latitude'].text) : 0.0;
+        final long = checkpoint['longitude'].text != '' ? double.parse(checkpoint['longitude'].text) : 0.0;
         batch.set(checkpointRef, {
           'name': checkpoint['name'].text,
           'expected_time': int.parse(checkpoint['expected_time'].text),
           'location': GeoPoint(
-            double.parse(checkpoint['latitude'].text),
-            double.parse(checkpoint['longitude'].text),
+            lat,long
           ),
           'time_reached': Timestamp.now(),
           'order': i,
@@ -69,12 +84,13 @@ class _CreateRouteScreenState extends State<CreateRouteScreen> {
           .doc(routeData['driver_info']['driver_id']);
       batch.update(userRef, {
         'route_id': routeId,
-        'route_name': routeData['route']['name'],
+        'route_name': routeData['name'],
         'dealer_info':{
-          'name':routeData['route']['dealer_name'],
+          'name':routeData['dealer_name'],
           'id':'',
-          'phone_no':routeData['route']['dealer_phone'],
+          'phone_no':routeData['dealer_phone'],
         },
+        'key_active':true,
         'is_delivery_assigned':true,
       });
 
@@ -89,7 +105,10 @@ class _CreateRouteScreenState extends State<CreateRouteScreen> {
 
       setState(() => _isSubmitted = true);
     } catch (e) {
-      _isSubmitted = false;
+      
+    setState(() {
+      _isSubmitting = false;
+    });
       debugPrint("Error adding route data: $e");
     }
     setState(() {
@@ -118,6 +137,7 @@ class _CreateRouteScreenState extends State<CreateRouteScreen> {
     try {
       final snapshot = await FirebaseFirestore.instance
           .collection('users')
+          // .where('is_delivery_assigned', isEqualTo: false)
           .get();
       return snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
     } catch (e) {
@@ -152,7 +172,7 @@ class _CreateRouteScreenState extends State<CreateRouteScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      "Available Drivers",
+                      "Select Driver (Single Selection)",
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -202,20 +222,29 @@ class _CreateRouteScreenState extends State<CreateRouteScreen> {
                               itemCount: drivers.length,
                               itemBuilder: (context, index) {
                                 final driver = drivers[index];
+                                final isSelected = _selectedDriverId == driver['id'];
                                 return Card(
-                                  color: Colors.teal.withOpacity(0.15),
+                                  color: isSelected 
+                                      ? Colors.tealAccent.withOpacity(0.3)
+                                      : Colors.teal.withOpacity(0.15),
                                   margin: const EdgeInsets.symmetric(
                                     vertical: 6,
                                   ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
+                                    side: isSelected 
+                                        ? const BorderSide(color: Colors.tealAccent, width: 2)
+                                        : BorderSide.none,
                                   ),
                                   child: ListTile(
                                     contentPadding: const EdgeInsets.all(12),
+                                    leading: isSelected 
+                                        ? const Icon(Icons.check_circle, color: Colors.tealAccent)
+                                        : const Icon(Icons.person, color: Colors.white70),
                                     title: Text(
                                       driver['name'] ?? 'Unnamed',
-                                      style: const TextStyle(
-                                        color: Colors.white,
+                                      style: TextStyle(
+                                        color: isSelected ? Colors.tealAccent : Colors.white,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -245,6 +274,7 @@ class _CreateRouteScreenState extends State<CreateRouteScreen> {
                                     ),
                                     onTap: () {
                                       setState(() {
+                                        _selectedDriverId = driver['id'];
                                         _driverIdController.text =
                                             driver['id'] ?? '';
                                         _driverNameController.text =
@@ -598,8 +628,29 @@ class _CreateRouteScreenState extends State<CreateRouteScreen> {
 
     setState(() => _isSubmitting = true);
 
+    // final routeData = {
+    //   'route':{'checkpoints': _checkpoints.length,
+    //   'created_at': DateTime.now().toIso8601String(),
+    //   'dealer_name': _dealerNameController.text.trim(),
+    //   'dealer_phone': _dealerPhoneController.text.trim(),
+    //   'distance_km': _totalDistanceController.text.trim(),
+    //   'end': _endPointController.text.trim(),
+    //   'expected_time': _expectedTimeController.text.trim(),
+    //   'is_active': true,
+    //   'name': _routeNameController.text.trim(),
+    //   'start': _startPointController.text.trim(),
+    //   'is_completed':false,
+    //   'status': 'Pending',},
+    //   'driver_info': {
+    //     'driver_id': _driverIdController.text.trim(),
+    //     'name': _driverNameController.text.trim(),
+    //     'phone_no': _driverPhoneController.text.trim(),
+    //     'vehicle_no': _vehicleNoController.text.trim(),
+    //     'assigned_at': DateTime.now().toIso8601String(),
+    //   }
+    // };
     final routeData = {
-      'route':{'checkpoints': _checkpoints.length,
+      'checkpoints': _checkpoints.length,
       'created_at': DateTime.now().toIso8601String(),
       'dealer_name': _dealerNameController.text.trim(),
       'dealer_phone': _dealerPhoneController.text.trim(),
@@ -609,7 +660,8 @@ class _CreateRouteScreenState extends State<CreateRouteScreen> {
       'is_active': true,
       'name': _routeNameController.text.trim(),
       'start': _startPointController.text.trim(),
-      'status': 'Pending',},
+      'is_completed':false,
+      'status': 'Pending',
       'driver_info': {
         'driver_id': _driverIdController.text.trim(),
         'name': _driverNameController.text.trim(),

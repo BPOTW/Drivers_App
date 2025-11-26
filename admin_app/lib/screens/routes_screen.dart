@@ -61,6 +61,91 @@ class _RoutesScreenState extends State<RoutesScreen> {
     }
   }
 
+  Future<void> duplicateRoute(Map<String, dynamic> originalRoute) async {
+    final firestore = FirebaseFirestore.instance;
+    final batch = firestore.batch();
+
+    try {
+      // Create new route document
+      final newRouteRef = firestore.collection('routes').doc();
+      final newRouteId = newRouteRef.id;
+
+      // Prepare new route data (without driver assignment)
+      final newRouteData = {
+        'name': '${originalRoute['name']}',
+        'dealer_name': originalRoute['dealer_name'],
+        'dealer_phone': originalRoute['dealer_phone'],
+        'distance_km': originalRoute['distance_km'],
+        'end': originalRoute['end'],
+        'expected_time': originalRoute['expected_time'],
+        'is_active': true,
+        'start': originalRoute['start'],
+        'is_completed': false,
+        'status': 'Pending',
+        'checkpoints': originalRoute['checkpoints'],
+        'created_at': DateTime.now().toIso8601String(),
+        // No driver assignment fields
+      };
+
+      batch.set(newRouteRef, newRouteData);
+
+      // Copy checkpoints from original route
+      final originalCheckpointsSnapshot = await firestore
+          .collection('routes')
+          .doc(originalRoute['id'])
+          .collection('checkpoints')
+          .get();
+
+      int order = 1;
+      for (var checkpointDoc in originalCheckpointsSnapshot.docs) {
+        final checkpointData = checkpointDoc.data();
+        final newCheckpointRef = newRouteRef.collection('checkpoints').doc();
+        
+        batch.set(newCheckpointRef, {
+          'name': checkpointData['name'],
+          'expected_time': checkpointData['expected_time'],
+          'location': checkpointData['location'],
+          'time_reached': Timestamp.now(),
+          'order': order,
+          'has_reached': false,
+          'status': "Pending",
+        });
+        order++;
+      }
+
+      await batch.commit();
+
+      await logEvent(
+        event: 'Route Duplicated',
+        message: 'Successfully duplicated route: ${originalRoute['name']}',
+        type: 'INFO',
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Route '${originalRoute['name']}' duplicated successfully"),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      setState(() {}); // Refresh the UI
+    } catch (e) {
+      await logEvent(
+        event: 'App Error',
+        message: 'Error duplicating route Page:routes_screen.',
+        type: 'ERROR',
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error duplicating route: $e'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      print("Error duplicating route: $e");
+    }
+  }
+
   Future<void> deleteRoute(String routeId) async {
     final firestore = FirebaseFirestore.instance;
 
@@ -225,7 +310,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
                                       ),
                                     ),
                                     Text(
-                                      'Assigned to: ${route['driver_info']?['name'] ?? 'N/A'}',
+                                      'Assigned by: ${route['dealer_name'] ?? 'N/A'}',
                                       style: const TextStyle(
                                         color: Colors.white70,
                                       ),
@@ -274,9 +359,50 @@ class _RoutesScreenState extends State<RoutesScreen> {
                                   ),
                                 ),
 
-                                // Toggle + Delete
+                                // Action buttons
                                 Row(
                                   children: [
+                                    // Duplicate Button
+                                    IconButton(
+                                      onPressed: () async {
+                                        final confirm = await showDialog<bool>(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: const Text('Duplicate Route'),
+                                            content: Text(
+                                              'Are you sure you want to duplicate "${route['name']}"? This will create a new route without assigning a driver.',
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(
+                                                  context,
+                                                  false,
+                                                ),
+                                                child: const Text('Cancel'),
+                                              ),
+                                              ElevatedButton(
+                                                onPressed: () => Navigator.pop(
+                                                  context,
+                                                  true,
+                                                ),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.blue,
+                                                ),
+                                                child: const Text('Duplicate',style: TextStyle(color: Colors.white),),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+
+                                        if (confirm == true) {
+                                          duplicateRoute(route);
+                                        }
+                                      },
+                                      icon: const Icon(Icons.copy),
+                                      color: Colors.blueAccent,
+                                      tooltip: 'Duplicate Route',
+                                    ),
+                                    // Delete Button
                                     IconButton(
                                       onPressed: () async {
                                         final confirm = await showDialog<bool>(
@@ -302,7 +428,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
                                                 style: ElevatedButton.styleFrom(
                                                   backgroundColor: Colors.red,
                                                 ),
-                                                child: const Text('Delete'),
+                                                child: const Text('Delete',style: TextStyle(color: Colors.white),),
                                               ),
                                             ],
                                           ),
@@ -314,6 +440,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
                                       },
                                       icon: const Icon(Icons.delete),
                                       color: Colors.redAccent,
+                                      tooltip: 'Delete Route',
                                     ),
                                   ],
                                 ),

@@ -1,4 +1,5 @@
 import 'package:admin_app/components/log_data_to_server.dart';
+import 'package:admin_app/screens/update_user_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -82,6 +83,29 @@ class DriverDetailsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Driver Details'),
         backgroundColor: Colors.black,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit, color: Colors.tealAccent),
+            tooltip: 'Update User',
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => UpdateUserScreen(userData: driverData),
+                ),
+              );
+              if (result == true) {
+                // Refresh the page or show success message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("User updated successfully!"),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+          ),
+        ],
       ),
       backgroundColor: Colors.grey[900],
       body: SingleChildScrollView(

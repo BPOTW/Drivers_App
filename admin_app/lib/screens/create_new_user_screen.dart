@@ -22,12 +22,77 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
   String _selectedRole = 'Driver';
   String _selectedStatus = 'Active';
   bool _isSubmitting = false;
+  bool _isCheckingKey = false;
+
+  Future<bool> _isLoginKeyAvailable(String loginKey) async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('login_key', isEqualTo: loginKey.trim())
+          .get();
+      
+      return snapshot.docs.isEmpty; // Returns true if no documents found (key is available)
+    } catch (e) {
+      print('Error checking login key: $e');
+      return false; // Return false on error to prevent creation
+    }
+  }
+
+  Future<bool> _isNICAvailable(String nic) async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('nic', isEqualTo: nic.trim())
+          .get();
+      
+      return snapshot.docs.isEmpty; // Returns true if no documents found (NIC is available)
+    } catch (e) {
+      print('Error checking NIC: $e');
+      return false; // Return false on error to prevent creation
+    }
+  }
 
   Future<void> addUser() async {
     try {
       if (!_formKey.currentState!.validate()) return;
+      
+      // Check if login key and NIC are available
+      setState(() {
+        _isCheckingKey = true;
+      });
+      
+      final isKeyAvailable = await _isLoginKeyAvailable(_loginKeyController.text);
+      final isNICAvailable = await _isNICAvailable(_NICController.text);
+      
+      if (!isKeyAvailable) {
+        setState(() {
+          _isCheckingKey = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Login key is already in use. Please choose a different key."),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      
+      if (!isNICAvailable) {
+        setState(() {
+          _isCheckingKey = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("NIC number is already registered. Please check the details."),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      
       setState(() {
         _isSubmitting = true;
+        _isCheckingKey = false;
       });
       final batch = FirebaseFirestore.instance.batch();
       final userRef = FirebaseFirestore.instance.collection('users').doc();
@@ -39,8 +104,8 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
         'phone_no': _phoneController.text,
         'nic': _NICController.text,
         'role': _selectedRole,
-        'loginKey': _loginKeyController.text,
-        'key_active': true,
+        'login_key': _loginKeyController.text,
+        'key_active': false,
         'is_delivery_assigned': false,
         'route_id' : '',
         'status': _selectedStatus,
@@ -176,8 +241,8 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
                         backgroundColor: Colors.tealAccent[700],
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      onPressed: _isSubmitting ? null : addUser,
-                      icon: _isSubmitting
+                      onPressed: (_isSubmitting || _isCheckingKey) ? null : addUser,
+                      icon: (_isSubmitting || _isCheckingKey)
                           ? const SizedBox(
                               height: 18,
                               width: 18,
@@ -188,7 +253,7 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
                             )
                           : const Icon(Icons.save, color: Colors.black),
                       label: Text(
-                        _isSubmitting ? "Creating..." : "Create User",
+                        _isCheckingKey ? "Checking Key..." : (_isSubmitting ? "Creating..." : "Create User"),
                         style: const TextStyle(
                           fontSize: 16,
                           color: Colors.black,

@@ -119,7 +119,7 @@ class TrackingScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 8),
                               Text('Driver ID: ${driver['id']}'),
-                              Text('Route: ${driver['route_id']}'),
+                              Text('Route: ${driver['route_id'] != '' ? driver['route_id'] : "Not Assigned"}'),
                               // Text(
                               //   'Status: ${driver['status']}',
                               //   style: TextStyle(
