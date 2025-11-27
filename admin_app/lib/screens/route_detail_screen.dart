@@ -384,7 +384,7 @@ class _RouteDetailsScreenState extends State<RouteDetailsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Route Details'),
+        title: const Text('Order Details'),
         backgroundColor: Colors.black,
         actions: [
           if (_isLoading)
@@ -399,7 +399,7 @@ class _RouteDetailsScreenState extends State<RouteDetailsScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.edit, color: Colors.tealAccent),
-                  tooltip: 'Update Route',
+                  tooltip: 'Update Order',
                   onPressed: () async {
                     final result = await Navigator.push(
                       context,
@@ -412,7 +412,7 @@ class _RouteDetailsScreenState extends State<RouteDetailsScreen> {
                       // Refresh the page or show success message
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text("Route updated successfully!"),
+                          content: Text("Order updated successfully!"),
                           backgroundColor: Colors.green,
                         ),
                       );
@@ -440,11 +440,11 @@ class _RouteDetailsScreenState extends State<RouteDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle('Route Information'),
+            _buildSectionTitle('Order Information'),
             const SizedBox(height: 10),
             _buildInfoCard([
-              _buildInfoRow('Route Name', routeData['name']),
-              _buildInfoRow('Route ID', routeData['id']),
+              _buildInfoRow('Order Name', routeData['name']),
+              _buildInfoRow('Order ID', routeData['id']),
               _buildInfoRow('Start Location', routeData['start']),
               _buildInfoRow('End Location', routeData['end']),
               _buildInfoRow('Total Distance', '${routeData['distance_km']} km'),

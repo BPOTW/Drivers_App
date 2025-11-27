@@ -223,7 +223,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  "Routes",
+                  "Orders",
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 ElevatedButton.icon(
@@ -237,7 +237,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
                   },
                   icon: const Icon(Icons.add_road),
                   label: const Text(
-                    "Create New Route",
+                    "Create New Order",
                     style: TextStyle(color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -265,7 +265,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
 
                 final routes = snapshot.data ?? [];
                 if (routes.isEmpty) {
-                  return const Center(child: Text('No routes found'));
+                  return const Center(child: Text('No orders found'));
                 }
 
                 return GridView.builder(
@@ -303,7 +303,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      route['name'] ?? 'Unnamed Route',
+                                      route['name'] ?? 'Unnamed Order',
                                       style: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
@@ -368,9 +368,9 @@ class _RoutesScreenState extends State<RoutesScreen> {
                                         final confirm = await showDialog<bool>(
                                           context: context,
                                           builder: (context) => AlertDialog(
-                                            title: const Text('Duplicate Route'),
+                                            title: const Text('Duplicate Order'),
                                             content: Text(
-                                              'Are you sure you want to duplicate "${route['name']}"? This will create a new route without assigning a driver.',
+                                              'Are you sure you want to duplicate "${route['name']}"? This will create a new order without assigning a driver.',
                                             ),
                                             actions: [
                                               TextButton(
@@ -400,7 +400,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
                                       },
                                       icon: const Icon(Icons.copy),
                                       color: Colors.blueAccent,
-                                      tooltip: 'Duplicate Route',
+                                      tooltip: 'Duplicate Order',
                                     ),
                                     // Delete Button
                                     IconButton(
@@ -408,9 +408,9 @@ class _RoutesScreenState extends State<RoutesScreen> {
                                         final confirm = await showDialog<bool>(
                                           context: context,
                                           builder: (context) => AlertDialog(
-                                            title: const Text('Delete Route'),
+                                            title: const Text('Delete Order'),
                                             content: const Text(
-                                              'Are you sure you want to delete this route?',
+                                              'Are you sure you want to delete this order?',
                                             ),
                                             actions: [
                                               TextButton(
@@ -440,7 +440,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
                                       },
                                       icon: const Icon(Icons.delete),
                                       color: Colors.redAccent,
-                                      tooltip: 'Delete Route',
+                                      tooltip: 'Delete Order',
                                     ),
                                   ],
                                 ),

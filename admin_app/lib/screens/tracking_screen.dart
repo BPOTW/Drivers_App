@@ -49,7 +49,7 @@ class TrackingScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 const Text(
-                  "Routes",
+                  "Trackings",
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 

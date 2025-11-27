@@ -9,7 +9,7 @@ class Sidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // final items = ['Users', 'Routes', 'Tracking', 'Logs'];
-    final items = ['Users', 'Routes', 'Tracking'];
+    final items = ['Users', 'Orders', 'Tracking'];
     return Container(
       width: 220,
       color: Colors.black.withOpacity(0.2),

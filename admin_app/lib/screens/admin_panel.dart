@@ -16,6 +16,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   String selectedPage = 'Users';
 
   Widget _getSelectedPage() {
+    print(selectedPage);
     switch (selectedPage) {
       case 'Routes':
         return const RoutesScreen();

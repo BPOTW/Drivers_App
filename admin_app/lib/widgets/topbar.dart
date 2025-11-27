@@ -5,29 +5,28 @@ class TopBar extends StatelessWidget {
   final String title;
   const TopBar({super.key, required this.title});
 
-  void addData() async{
+  void addData() async {
     // When new user is created
-await logEvent(
-  event: 'User Created',
-  message: 'New user registered: ali@example.com',
-  userId: 'user_001',
-);
+    await logEvent(
+      event: 'User Created',
+      message: 'New user registered: ali@example.com',
+      userId: 'user_001',
+    );
 
-// When a new route is added
-await logEvent(
-  event: 'Route Created',
-  message: 'Route from Lahore to Islamabad added.',
-  userId: 'admin_002',
-  metadata: {'routeId': 'route_789', 'vehicle': 'Truck A'},
-);
+    // When a new route is added
+    await logEvent(
+      event: 'Route Created',
+      message: 'Route from Lahore to Islamabad added.',
+      userId: 'admin_002',
+      metadata: {'routeId': 'route_789', 'vehicle': 'Truck A'},
+    );
 
-// When an error occurs
-await logEvent(
-  event: 'App Error',
-  message: 'App crashed during location update.',
-  type: 'ERROR',
-);
-
+    // When an error occurs
+    await logEvent(
+      event: 'App Error',
+      message: 'App crashed during location update.',
+      type: 'ERROR',
+    );
   }
 
   @override
@@ -39,12 +38,21 @@ await logEvent(
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: const TextStyle(fontSize: 22, color: Colors.tealAccent)),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 22, color: Colors.tealAccent),
+          ),
           Row(
             children: [
-              IconButton(onPressed: () {}, icon: const Icon(Icons.notifications)),
+              IconButton(
+                onPressed: () {},
+                icon: const Icon(Icons.notifications),
+              ),
               IconButton(onPressed: () {}, icon: const Icon(Icons.settings)),
-              IconButton(onPressed: () {}, icon: const Icon(Icons.logout, color: Colors.redAccent)),
+              IconButton(
+                onPressed: () {},
+                icon: const Icon(Icons.logout, color: Colors.redAccent),
+              ),
             ],
           ),
         ],
